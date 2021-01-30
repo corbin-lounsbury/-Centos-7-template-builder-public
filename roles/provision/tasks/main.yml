@@ -1,0 +1,77 @@
+---
+- name: perform yum update
+  yum: 
+    name: "*"
+    state: latest
+
+- name: Install epel-release
+  yum: 
+    name: epel-release
+    state: latest
+
+- name: Install common packages
+  yum:
+    name: 
+      - yum-utils
+      - git
+      - nfs-utils
+      - python3
+      - python3-pip
+      - nano
+      - perl
+      
+- name: Install general security packages
+  yum:
+    name: 
+      - policycoreutils  
+      - selinux-policy 
+      - selinux-policy-targeted 
+      - libselinux-utils 
+      - setroubleshoot-server 
+      - setools 
+      - setools-console 
+      - mcstrans
+
+- name: Install Centos 7 Security packages
+  yum: 
+    name: policycoreutils-python
+    state: present
+  when: (ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "7")
+
+- name: Cleanup packages
+  yum: 
+    autoremove: yes
+
+- name: Reboot to apply updates/changes
+  reboot:
+
+- name: Create user svc-config
+  user:
+    name: svc-config
+    state: present
+
+- name: Allow 'wheel' group to have passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+
+- name: Add sudoers users to wheel group
+  user:
+    name: svc-config
+    groups: wheel
+    append: yes
+    state: present
+    createhome: yes
+
+- name: Set up authorized keys for the deployer user
+  authorized_key: 
+    user: svc-config 
+    key: "{{ pub_key }}"
+
+- name: Wait 1 minute to finalize processes
+  pause:
+    minutes: 1
+
+    

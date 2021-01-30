@@ -1,0 +1,26 @@
+---
+
+- name: Initial VM creation and OS install
+  hosts: 127.0.0.1
+  connection: local
+  gather_facts: no
+
+  roles:
+    - create
+
+- name: Image provisioning
+  hosts: 172.16.10.230
+  remote_user: root
+  vars:
+    ansible_password: "{{ root_password }}"
+
+  roles:
+    - provision
+
+- name: Convert VM to template
+  hosts: 127.0.0.1
+  connection: local
+  gather_facts: no
+
+  roles:
+    - finalize

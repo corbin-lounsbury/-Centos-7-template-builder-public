@@ -1,0 +1,10 @@
+---
+vcenter_hostname: vcenter01
+domain: contoso.com
+vcenter_datacenter: DC1
+vcenter_cluster: cluster01
+autobuild_template: c7-template-autobuild
+template_ip: 172.16.10.230
+vcenter_datastore: vm_cluster_1
+ansible_vcenter_username: svc-ansible@vsphere.local
+iso_path: '[isovol1] Linux/CentOS/CentOS-7-x86_64-DVD-2009.iso'

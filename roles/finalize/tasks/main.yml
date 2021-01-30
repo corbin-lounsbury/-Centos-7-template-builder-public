@@ -1,0 +1,61 @@
+--- 
+- name: Shutdown machine
+  vmware_guest:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ ansible_vcenter_username }}"
+    password: "{{ service_account_password }}"
+    validate_certs: no
+    datacenter: "{{ vcenter_datacenter }}"
+    cluster: "{{ vcenter_cluster }}"
+    folder: /
+    name: "{{ autobuild_template }}"
+    state: poweredoff
+
+- name: Remove install iso
+  vmware_guest:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ ansible_vcenter_username }}"
+    password: "{{ service_account_password }}"
+    validate_certs: no
+    datacenter: "{{ vcenter_datacenter }}"
+    cluster: "{{ vcenter_cluster }}"
+    folder: /
+    name: "{{ autobuild_template }}"
+    cdrom:
+      - controller_number: 0
+        unit_number: 0
+        type: none
+        state: present
+        controller_type: sata
+      - controller_number: 0
+        unit_number: 1
+        type: none
+        state: absent
+        controller_type: sata
+      - controller_number: 1
+        unit_number: 0
+        type: none
+        state: absent
+        controller_type: sata
+      - controller_number: 1
+        unit_number: 1
+        type: none
+        state: absent
+        controller_type: sata
+
+- name: Convert to template
+  vmware_guest:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ ansible_vcenter_username }}"
+    password: "{{ service_account_password }}"
+    validate_certs: no
+    datacenter: "{{ vcenter_datacenter }}"
+    cluster: "{{ vcenter_cluster }}"
+    folder: /
+    name: "{{ autobuild_template }}"
+    is_template: yes
+
+- name: Remove known host file in AWX
+  shell: |
+    sed '/^{{ template_ip }}/d' -i /root/.ssh/known_hosts
+  ignore_errors: yes

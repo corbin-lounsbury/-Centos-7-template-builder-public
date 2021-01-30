@@ -1,0 +1,81 @@
+---
+- name: Delete old template
+  vmware_guest:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ ansible_vcenter_username }}"
+    password: "{{ service_account_password }}"
+    validate_certs: no
+    datacenter: "{{ vcenter_datacenter }}"
+    cluster: "{{ vcenter_cluster }}"
+    folder: /
+    name: "{{ autobuild_template }}"
+    state: absent
+    force: yes
+
+- name: Create VM and mount install ISO
+  vmware_guest:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ ansible_vcenter_username }}"
+    password: "{{ service_account_password }}"
+    validate_certs: no
+    datacenter: "{{ vcenter_datacenter }}"
+    cluster: "{{ vcenter_cluster }}"
+    folder: /
+    name: "{{ autobuild_template }}"
+    guest_id: centos7_64Guest
+    state: poweredon
+
+    disk:
+    - size: 20gb
+      datastore: "{{ vcenter_datastore }}"
+      type: thin
+
+    hardware:
+      num_cpus: 2
+      memory_mb: 2048
+
+    networks:
+    - name: "VLAN10(dpg)" 
+      connected: yes
+      start_connected: yes
+      device_type: vmxnet3
+
+    cdrom:
+    - controller_number: 0
+      unit_number: 1
+      controller_type: sata
+      state: present
+      type: iso
+      iso_path: "{{ iso_path }}"
+
+- name: "Boot parameter"
+  vmware_guest_sendkey:
+    validate_certs: False
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ ansible_vcenter_username }}"
+    password: "{{ service_account_password }}"
+    name: "{{ autobuild_template }}"
+    keys_send:
+      - ESC
+      - ESC
+    string_send: 'vmlinuz initrd=initrd.img inst.ks=http://172.16.10.38:9000/rhel_cent7/c7-kickstart.cfg'
+
+- name: "Start installation"
+  vmware_guest_sendkey:
+    validate_certs: False
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ ansible_vcenter_username }}"
+    password: "{{ service_account_password }}"
+    name: "c7-template-autobuild"
+    keys_send:
+      - ENTER
+
+- name: Wait for VM to be available.
+  wait_for:
+    host: "{{ template_ip }}"
+    port: 22
+    timeout: 600
+
+- name: Dynamically add host to memory
+  add_host:
+    name: "{{ template_ip }}"
